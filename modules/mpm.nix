@@ -7,7 +7,7 @@ let
     version  = "latest";
     src = pkgs.fetchurl {
       url    = "https://www.mathworks.com/mpm/glnxa64/mpm";
-      sha256 = "sha256-CaQwOQ6TkZyVJysxeOvSlGjWAHkabh8iAMSLsl1nUkM=";
+      sha256 = "sha256-zdEGLcjTDeIQPr+HE8sZNdcy222QppcY4NSWFjJfP+8=";
     };
 
     dontUnpack = true;

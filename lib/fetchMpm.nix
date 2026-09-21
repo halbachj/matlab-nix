@@ -2,11 +2,11 @@
 
 { hash,                          # required: content hash (sha256- prefix or base-32)
   outputHashMode ? "recursive",  # "recursive" for directories, "flat" if you know you'll get a single file
-  inputFile   ? null,           # path to mpm input file (exclusive)
-  release     ? null,           # e.g. "R2025a"
-  products    ? [],             # e.g. [ "MATLAB" "Simulink" ]
-  destination ? "$TMPDIR/out",  # shell-expanded
-  noDeps      ? false           # omit dependencies
+  inputFile   ? "",              # path to mpm input file (exclusive)
+  release     ? null,            # e.g. "R2025a"
+  products    ? [],              # e.g. [ "MATLAB" "Simulink" ]
+  destination ? "$TMPDIR/out",   # shell-expanded
+  noDeps      ? false            # omit dependencies
 }:
 let
   lib       = pkgs.lib;
