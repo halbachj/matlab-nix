@@ -1,0 +1,18 @@
+# MATLAB installation artifacts and local build outputs. This project tracks only
+# Nix source, metadata, and documentation — never MATLAB binaries or licenses.
+
+# Unpacked/installed MATLAB trees (e.g. produced by mpm during local experiments)
+argh/
+
+# `nix build` / `nix develop` output symlinks
+result
+result-*
+
+# Trace logs captured while debugging MATLAB startup
+*.log
+strace.log
+trace.log
+
+# Temporary MPM download/install destinations
+/tmp/mpm-*
+$TMPDIR/mpm-*

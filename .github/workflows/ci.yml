@@ -1,0 +1,32 @@
+# CI for matlab-nix.
+#
+# `nix flake check` evaluates and builds all packages and the eval-time checks
+# (tests/checks.nix). The `matlab*` install packages are deliberately excluded
+# from `checks` because `mpm install` requires interactive network access to
+# MathWorks, so CI stays fast and does not download MATLAB artifacts.
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Enable flake cache
+        uses: DeterminateSystems/flake-cache-action@v3
+
+      - name: nix flake check
+        run: nix flake check --all-systems
+
+      - name: Validate public outputs
+        run: |
+          nix eval .#matlabProducts
+          nix eval --raw .#nixosModules.matlab
