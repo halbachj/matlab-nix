@@ -26,4 +26,4 @@ jobs:
       - name: Validate public outputs
         run: |
           nix eval .#matlabProducts
-          nix eval --raw .#nixosModules.matlab
+          nix eval .#nixosModules.matlab
