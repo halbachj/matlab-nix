@@ -16,7 +16,7 @@
       # are validated at evaluation time.
       nixosModules.matlab = import ./modules/matlab.nix;
     }
-    // flake-utils.lib.eachDefaultSystem (system:
+    // flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs {
           inherit system;

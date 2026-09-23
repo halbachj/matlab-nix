@@ -10,8 +10,7 @@ licensing, and packaging decisions that are intentionally left for the owner.
 - MATLAB is proprietary **unfree** software distributed by MathWorks under its
   own license terms. The `meta.license` of every package is set to `unfree`.
 - The *packaging code* in this repository is separate from MATLAB binaries.
-  Decide and state a license for the code (e.g. MIT / Apache-2.0) and add a
-  `LICENSE` file. The current `meta` does **not** declare a code license.
+  It is licensed under the **BSD 3-Clause License** (see `LICENSE`).
 - Confirm redistribution of the packaging code is compatible with MathWorks
   terms. This project fetches installers from `www.mathworks.com` at build time
   and publishes **no binary cache**; it does not redistribute MATLAB artifacts.
@@ -53,7 +52,7 @@ If proposing to nixpkgs:
 
 ## 6. Housekeeping before publishing
 
-- [ ] Add `LICENSE` and update the `meta` license note in `flake.nix`.
+- [x] Add `LICENSE` (BSD 3-Clause).
 - [ ] Run `nix flake check --all-systems`.
 - [ ] Confirm `git status` is clean and `flake.lock` is current.
 - [ ] Review `README.md` usage/status warnings for accuracy.

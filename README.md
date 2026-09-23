@@ -110,5 +110,5 @@ maintained separately:
 ## License
 
 MATLAB is proprietary software (unfree); see the `meta.license` of each package.
-The packaging code in this repository is provided under the terms documented in
-`LICENSE` (if present) — see `docs/upstreaming.md` for redistribution guidance.
+The packaging code in this repository is licensed under the BSD 3-Clause License —
+see `LICENSE`. See `docs/upstreaming.md` for redistribution guidance.
