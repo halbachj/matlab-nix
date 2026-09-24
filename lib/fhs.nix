@@ -43,7 +43,7 @@ let
       #!/bin/sh
       export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib64/qt-5.15.17/plugins/platforms
       export QT_QPA_PLATFORM=xcb
-      export LDPATH_SUFFIX=${pkgs.xorg.libICE}/lib:${pkgs.xorg.xcbutilcursor}/lib:/usr/lib:/usr/lib64
+      export LDPATH_SUFFIX=${(pkgs.libice or pkgs.xorg.libICE)}/lib:${(pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor)}/lib:/usr/lib:/usr/lib64
       exec ${matlabRaw}/out/bin/matlab "$@"
     '';
   };
@@ -64,7 +64,7 @@ let
     runScript = ''
       #!/bin/sh
       export QT_QPA_PLATFORM=xcb
-      export LD_LIBRARY_PATH=${pkgs.xorg.libICE}/lib:${pkgs.xorg.xcbutilcursor}/lib:/usr/lib:/usr/lib64
+      export LD_LIBRARY_PATH=${(pkgs.libice or pkgs.xorg.libICE)}/lib:${(pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor)}/lib:/usr/lib:/usr/lib64
       for window in "$HOME"/.MathWorks/ServiceHost/-mw_shared_installs/*/bin/glnxa64/MathWorksServiceHostWindow; do
         if [ -x "$window" ]; then
           exec "$window" "$@"
@@ -81,7 +81,7 @@ let
     runScript = ''
       #!/bin/sh
       export QT_QPA_PLATFORM=xcb
-      export LD_LIBRARY_PATH=${pkgs.xorg.libICE}/lib:${pkgs.xorg.xcbutilcursor}/lib:/usr/lib:/usr/lib64
+      export LD_LIBRARY_PATH=${(pkgs.libice or pkgs.xorg.libICE)}/lib:${(pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor)}/lib:/usr/lib:/usr/lib64
       for connector in "$HOME"/.MathWorks/ServiceHost/feather/v*/bin/MATLABConnector "$HOME"/.MathWorks/ServiceHost/-mw_shared_installs/*/bin/MATLABConnector; do
         if [ -x "$connector" ]; then
           export LD_LIBRARY_PATH="$(dirname "$connector")/glnxa64:$LD_LIBRARY_PATH"

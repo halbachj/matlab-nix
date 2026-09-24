@@ -5,6 +5,25 @@
 
 { pkgs }:
 let
+  libsm = pkgs.libsm or pkgs.xorg.libSM;
+  libx11 = pkgs.libx11 or pkgs.xorg.libX11;
+  libxcb = pkgs.libxcb or pkgs.xorg.libxcb;
+  libxcomposite = pkgs.libxcomposite or pkgs.xorg.libXcomposite;
+  libxcursor = pkgs.libxcursor or pkgs.xorg.libXcursor;
+  libxcbCursor = pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor;
+  libxdamage = pkgs.libxdamage or pkgs.xorg.libXdamage;
+  libxext = pkgs.libxext or pkgs.xorg.libXext;
+  libxfixes = pkgs.libxfixes or pkgs.xorg.libXfixes;
+  libxft = pkgs.libxft or pkgs.xorg.libXft;
+  libice = pkgs.libice or pkgs.xorg.libICE;
+  libxi = pkgs.libxi or pkgs.xorg.libXi;
+  libxinerama = pkgs.libxinerama or pkgs.xorg.libXinerama;
+  libxrandr = pkgs.libxrandr or pkgs.xorg.libXrandr;
+  libxrender = pkgs.libxrender or pkgs.xorg.libXrender;
+  libxt = pkgs.libxt or pkgs.xorg.libXt;
+  libxtst = pkgs.libxtst or pkgs.xorg.libXtst;
+  libxxf86vm = pkgs.libxxf86vm or pkgs.xorg.libXxf86vm;
+
   matlabLibs = with pkgs; [
     cacert
     alsa-lib # libasound2
@@ -50,25 +69,25 @@ let
     udev
     jre
     ncurses # Needed for CLI
-  ] ++ (with xorg; [
-    libSM
-    libX11
+  ] ++ [
+    libsm
+    libx11
     libxcb
-    libXcomposite
-    libXcursor
-    xcbutilcursor
-    libXdamage
-    libXext
-    libXfixes
-    libXft
-    libICE
-    libXi
-    libXinerama
-    libXrandr
-    libXrender
-    libXt
-    libXtst
-    libXxf86vm
-  ]);
+    libxcomposite
+    libxcursor
+    libxcbCursor
+    libxdamage
+    libxext
+    libxfixes
+    libxft
+    libice
+    libxi
+    libxinerama
+    libxrandr
+    libxrender
+    libxt
+    libxtst
+    libxxf86vm
+  ];
 in
   matlabLibs
