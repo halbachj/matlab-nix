@@ -34,9 +34,11 @@ If proposing to nixpkgs:
 - The FHS wrappers (`lib/fhs.nix`) rely on host mounts (`/dev`, `/proc`,
   `/sys`, `/tmp`, `/home`) that may not be acceptable as default nixpkgs
   packages — review against nixpkgs conventions.
-- `programs.matlab` module needs `specialArgs` `{ matlabProducts,
-  productMetadata }`; when importing into nixpkgs, prefer exposing them via
-  `_module.args` or moving metadata into the module.
+- `programs.matlab` module (`modules/matlab.nix`) imports `matlabProducts` and
+  `productMetadata` from its own source tree, so it can be imported into a
+  NixOS system evaluation without `specialArgs` or `_module.args`. Passing
+  either via `specialArgs` / `_module.args` still overrides the defaults;
+  adjust the relative imports if the module file is vendored elsewhere.
 - `meta.platforms` is currently hard-coded to `[ "x86_64-linux" ]`; keep in
   sync with the metadata actually available.
 

@@ -6,7 +6,7 @@
 #   nix build .#checks.matlabBuild   (if wired)  or:
 #   nix build .#matlabRaw
 
-{ pkgs, lib, matlabProducts, productMetadata }:
+{ pkgs, lib }:
 
 let
   cfg = lib.evalModules {
@@ -19,7 +19,6 @@ let
         };
       }
     ];
-    specialArgs = { inherit matlabProducts productMetadata; };
   } .config.programs.matlab;
 
   fetchMpm = import ../lib/fetchMpm.nix {

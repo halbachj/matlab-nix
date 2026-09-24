@@ -1,8 +1,12 @@
 # Evaluation tests for product selection and closure resolution. These are
 # assertions that run during evaluation, so `nix flake check` catches a regression
 # without building or downloading any MATLAB artifact.
+#
+# The module is evaluated WITHOUT specialArgs: it imports `matlabProducts` and
+# `productMetadata` from its own source tree, so importing it into a NixOS
+# system evaluation works out of the box.
 
-{ pkgs, lib, matlabProducts, productMetadata }:
+{ pkgs, lib }:
 
 let
   # Evaluate `programs.matlab` for a given product selection against R2026a.
@@ -16,7 +20,6 @@ let
         };
       }
     ];
-    specialArgs = { inherit matlabProducts productMetadata; };
   };
 
   names = cfg: map (p: p.name) cfg.closureProducts;
@@ -52,4 +55,29 @@ in
   toolboxes = mkCheck "toolboxes"
     (expectClosure [ "matlab" "simulink" "signalProcessing" ]
       [ "MATLAB" "Simulink" "Signal_Processing_Toolbox" ]);
+
+  # specialArgs / `_module.args` still override the module's default metadata
+  # import. Empty release metadata makes evaluation throw; success would mean
+  # the override was ignored.
+  specialArgsOverride =
+    let
+      attempt = builtins.tryEval (
+        builtins.deepSeq
+          (lib.evalModules {
+            modules = [
+              (import ../modules/matlab.nix)
+              {
+                programs.matlab = {
+                  release = "R2026a";
+                  installedProducts = [ "matlab" ];
+                };
+              }
+            ];
+            specialArgs = { productMetadata = { }; };
+          }).config.programs.matlab
+          true
+      );
+    in
+    assert !attempt.success;
+    mkCheck "specialargs-override" 1;
 }

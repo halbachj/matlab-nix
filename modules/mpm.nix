@@ -28,7 +28,10 @@ let
 
   matlabLibs = with pkgs; [
     unzip pam zlib libGL mesa gtk3 pango cairo freetype fontconfig
-    ncurses5 stdenv.cc.cc.lib
+    # ncurses ABI-5 compatibility (libtinfo.so.5). nixpkgs exposes this as
+    # `ncurses5`; some nixpkgs revisions or overlays name it `ncurses5Compat`.
+    (pkgs.ncurses5Compat or pkgs.ncurses5)
+    stdenv.cc.cc.lib
   ];
 
   mpmFHS = pkgs.buildFHSEnv {

@@ -11,7 +11,7 @@
 }:
 let
   matlabFHS = pkgs.buildFHSEnv {
-    name = "matlab-fhs";
+    name = "matlab";
     extraMounts = [
       "/home:/home"                              # preserve user environment
       "/tmp:/tmp"                                # required for MATLAB IPC

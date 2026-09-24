@@ -7,8 +7,11 @@ This flake builds and runs MATLAB (and optional MathWorks products) on
 via the MathWorks Package Manager (`mpm`). It exposes:
 
 - a public, release-independent product catalog (`matlabProducts`),
+- per-release metadata (`productMetadata`),
 - a NixOS module (`programs.matlab`) for selecting a release and products with
-  evaluation-time validation, and
+  evaluation-time validation,
+- a package builder (`lib.mkMatlabPackages` / `lib.mkMatlab`) driven by the
+  consumer's `programs.matlab` configuration, and
 - per-system packages, checks, and dev shells.
 
 ## Status / warnings
@@ -41,6 +44,10 @@ nix run .#serviceHost
 `nix develop` shells are provided as `.#devShells.default` (MPM toolchain) and
 `.#devShells.matlab` / `.#devShells.serviceHost` (the FHS wrappers).
 
+The MATLAB package installs a `matlab` command (the FHS wrapper), so
+`nix shell .#matlab -c matlab` or adding it to `environment.systemPackages`
+puts `matlab` directly on `PATH`.
+
 ## Packages
 
 | Package | Description |
@@ -55,7 +62,8 @@ nix run .#serviceHost
 
 ## NixOS module
 
-Enable the module and select products:
+Enable the module, select products, and install the package built from that
+selection:
 
 ```nix
 {
@@ -65,8 +73,18 @@ Enable the module and select products:
     release = "R2026a";
     installedProducts = [ "matlab" "simulink" "imageProcessing" ];
   };
+
+  # The module validates `programs.matlab` but installs nothing by itself.
+  # `mkMatlab` builds the `matlab` FHS wrapper from the evaluated config.
+  environment.systemPackages = [
+    (matlab-nix.lib.mkMatlab { programsMatlab = config.programs.matlab; })
+  ];
 }
 ```
+
+The module imports its metadata (`matlabProducts`, `productMetadata`) from the
+flake source tree, so it needs no `specialArgs` or `_module.args` in a NixOS
+system evaluation.
 
 Product keys are the names of the `matlabProducts` catalog (e.g. `matlab`,
 `simulink`, `imageProcessing`, `signalProcessing`). At evaluation time the
@@ -78,6 +96,26 @@ module validates that:
 - there are no duplicate selections and the dependency closure is complete.
 
 Invalid selections fail the build with a descriptive `throw`.
+
+## Package builder
+
+`lib.mkMatlabPackages` builds packages from the consumer's `programs.matlab`
+instead of the flake's built-in example configurations:
+
+```nix
+matlab-nix.lib.mkMatlabPackages {
+  system = "x86_64-linux";          # default
+  programsMatlab = config.programs.matlab;   # or raw settings
+}
+```
+
+- `programsMatlab` accepts either the evaluated `config.programs.matlab` (from
+  `nixosModules.matlab`) or raw settings such as
+  `{ release = "R2026a"; installedProducts = [ "matlab" ]; }` (the builder
+  evaluates and validates them itself).
+- Returns `{ matlab, matlabRaw, serviceHost, serviceHostWindow, connector,
+  serviceHostRaw }`. `lib.mkMatlab` is a shorthand that returns only the
+  `matlab` FHS wrapper.
 
 ## Architecture
 

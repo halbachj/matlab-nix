@@ -2,11 +2,16 @@
 # compatibility, duplicate selections, and dependency-closure completeness are
 # validated at evaluation time.
 #
-# Requires specialArgs: { matlabProducts, productMetadata }.
+# `matlabProducts` and `productMetadata` are imported from this repository's
+# source tree by default, so the module can be imported into any NixOS
+# configuration without specialArgs. Passing either via specialArgs or
+# `_module.args` overrides the default.
 
-{ lib, config, matlabProducts, productMetadata, ... }:
+{ lib, config, ... } @ args:
 
 let
+  matlabProducts = args.matlabProducts or (import ../lib/matlabProducts.nix);
+  productMetadata = args.productMetadata or (import ../lib/products.nix);
   catalogNames = lib.attrNames matlabProducts;
 in
 {

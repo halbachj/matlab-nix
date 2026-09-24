@@ -7,14 +7,99 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    {
+    let
+      lib = nixpkgs.lib;
+
       # Public named product catalog (release-independent).
       matlabProducts = import ./lib/matlabProducts.nix;
 
+      # Per-release checksum + product table (release metadata).
+      productMetadata = import ./lib/products.nix;
+
+      # Evaluate raw `programs.matlab` settings through the module. The module
+      # imports its own metadata, so no specialArgs are required.
+      evalMatlab = programsMatlab:
+        (lib.evalModules {
+          modules = [
+            ./modules/matlab.nix
+            { programs.matlab = programsMatlab; }
+          ];
+        }).config.programs.matlab;
+
+      # Resolve a validated `programs.matlab` config into the raw install tree
+      # plus all FHS wrappers for it.
+      makePackages = pkgs: cfg:
+        let
+          matlabLibs = import ./lib/common.nix { inherit pkgs; };
+          mpm = import ./modules/mpm.nix { inherit pkgs; };
+          fetchMpm = import ./lib/fetchMpm.nix { inherit pkgs mpm; };
+          installMatlab = import ./lib/install.nix { inherit pkgs; };
+          serviceHost = import ./lib/serviceHost.nix { inherit pkgs; };
+          fhsWrappers = import ./lib/fhs.nix { inherit pkgs matlabLibs; };
+
+          release = cfg.release;
+          checksum = cfg.releaseMetadata.checksum;
+          closureProducts = cfg.closureProducts;
+          selectedNames = map (p: p.name) cfg.selectedProducts;
+
+          mpmSources = map (product: fetchMpm {
+            inherit release;
+            hash = product.hash;
+            product = product.name;
+          }) closureProducts;
+          matlabRaw = installMatlab {
+            inherit release checksum closureProducts selectedNames;
+            sources = mpmSources;
+          };
+          shrelease = "2025.3.0.2";
+          shRaw = serviceHost;
+
+          wrappers = fhsWrappers {
+            inherit matlabRaw;
+            serviceHost = shRaw;
+            inherit shrelease;
+            enableConnector = cfg.connector.enable;
+          };
+        in
+        wrappers // { matlabRaw = matlabRaw; serviceHostRaw = shRaw; };
+    in
+    {
+      matlabProducts = matlabProducts;
+
+      # Per-release metadata, importable as `inputs.matlab-nix.productMetadata`.
+      productMetadata = productMetadata;
+
       # NixOS module providing `programs.matlab`. Product selection, release
       # compatibility, duplicate selections, and dependency-closure completeness
-      # are validated at evaluation time.
+      # are validated at evaluation time. Imports its own metadata; specialArgs
+      # are not required.
       nixosModules.matlab = import ./modules/matlab.nix;
+
+      # Package builder driven by the consumer's `programs.matlab`. Accepts
+      # either the evaluated `config.programs.matlab` (from the NixOS module)
+      # or raw `{ release, installedProducts, connector.enable? }` settings.
+      # Returns { matlab, matlabRaw, serviceHost, serviceHostWindow, connector,
+      # serviceHostRaw }.
+      lib =
+        let
+          mkMatlabPackages = { system ? "x86_64-linux", programsMatlab }:
+            let
+              pkgs = import nixpkgs {
+                inherit system;
+                config.allowUnfree = true;
+              };
+              cfg =
+                if programsMatlab ? closureProducts
+                then programsMatlab
+                else evalMatlab programsMatlab;
+            in
+            makePackages pkgs cfg;
+        in
+        {
+          inherit mkMatlabPackages;
+          # Convenience wrapper returning only the `matlab` FHS package.
+          mkMatlab = args: (mkMatlabPackages args).matlab;
+        };
     }
     // flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
@@ -22,47 +107,6 @@
           inherit system;
           config.allowUnfree = true;
         };
-        lib = nixpkgs.lib;
-
-        matlabLibs = import ./lib/common.nix { inherit pkgs; };
-        productMetadata = import ./lib/products.nix;
-        matlabProducts = import ./lib/matlabProducts.nix;
-        mpm = import ./modules/mpm.nix { inherit pkgs; };
-        fetchMpm = import ./lib/fetchMpm.nix { inherit pkgs mpm; };
-        installMatlab = import ./lib/install.nix { inherit pkgs; };
-        serviceHost = import ./lib/serviceHost.nix { inherit pkgs; };
-        fhsWrappers = import ./lib/fhs.nix { inherit pkgs matlabLibs; };
-
-        # Resolve a configured `programs.matlab` and return the raw install tree
-        # plus all FHS wrappers for it.
-        makePackages = config:
-          let
-            cfg = config.programs.matlab;
-            release = cfg.release;
-            checksum = cfg.releaseMetadata.checksum;
-            closureProducts = cfg.closureProducts;
-            selectedNames = map (p: p.name) cfg.selectedProducts;
-
-            mpmSources = map (product: fetchMpm {
-              inherit release;
-              hash = product.hash;
-              product = product.name;
-            }) closureProducts;
-            matlabRaw = installMatlab {
-              inherit release checksum closureProducts selectedNames;
-              sources = mpmSources;
-            };
-            shrelease = "2025.3.0.2";
-            shRaw = serviceHost;
-
-            wrappers = fhsWrappers {
-              inherit matlabRaw;
-              serviceHost = shRaw;
-              inherit shrelease;
-              enableConnector = cfg.connector.enable;
-            };
-          in
-          wrappers // { matlabRaw = matlabRaw; serviceHostRaw = shRaw; };
 
         # Default configuration: minimal package, MATLAB only.
         defaultCfg = lib.evalModules {
@@ -75,9 +119,8 @@
               };
             }
           ];
-          specialArgs = { inherit matlabProducts productMetadata; };
         };
-        defaultPackages = makePackages defaultCfg.config;
+        defaultPackages = makePackages pkgs defaultCfg.config.programs.matlab;
 
         # Example configuration: MATLAB + Simulink.
         simulinkCfg = lib.evalModules {
@@ -90,9 +133,8 @@
               };
             }
           ];
-          specialArgs = { inherit matlabProducts productMetadata; };
         };
-        simulinkPackages = makePackages simulinkCfg.config;
+        simulinkPackages = makePackages pkgs simulinkCfg.config.programs.matlab;
 
         # Example configuration: MATLAB + Simulink + optional toolboxes.
         toolboxesCfg = lib.evalModules {
@@ -105,9 +147,10 @@
               };
             }
           ];
-          specialArgs = { inherit matlabProducts productMetadata; };
         };
-        toolboxesPackages = makePackages toolboxesCfg.config;
+        toolboxesPackages = makePackages pkgs toolboxesCfg.config.programs.matlab;
+
+        mpm = import ./modules/mpm.nix { inherit pkgs; };
 
         mkMeta = pname: description: extra: {
           inherit pname description;
@@ -145,7 +188,7 @@
         };
 
         checks = import ./tests/checks.nix {
-          inherit pkgs lib matlabProducts productMetadata;
+          inherit pkgs lib;
         };
 
         devShells.default = mpm.fhs.env;
