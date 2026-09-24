@@ -28,16 +28,15 @@ let
   installMatlab = import ../lib/install.nix { inherit pkgs; };
 
   release = cfg.release;
-  mpmSources = map (product: fetchMpm {
+  mpmSource = fetchMpm {
     inherit release;
-    hash = product.hash;
-    product = product.name;
-  }) cfg.closureProducts;
+    hash = if cfg.sourceHash != null then cfg.sourceHash else (builtins.head cfg.closureProducts).hash;
+    products = map (product: product.name) cfg.closureProducts;
+  };
 in
 installMatlab {
   inherit release;
-  checksum = cfg.releaseMetadata.checksum;
   closureProducts = cfg.closureProducts;
-  sources = mpmSources;
+  source = mpmSource;
   selectedNames = map (p: p.name) cfg.selectedProducts;
 }

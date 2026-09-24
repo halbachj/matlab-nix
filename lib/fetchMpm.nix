@@ -2,7 +2,7 @@
 
 { hash,                          # required: content hash (sha256- prefix or base-32)
   release,                        # e.g. "R2025a"
-  product,                        # e.g. "MATLAB"
+  products,                       # e.g. [ "MATLAB" "Simulink" ]
   destination ? "$TMPDIR/out"    # shell-expanded
 }:
 pkgs.stdenvNoCC.mkDerivation {
@@ -20,13 +20,12 @@ pkgs.stdenvNoCC.mkDerivation {
   allowSubstitutes = false;     # network access, so never cached by Hydra
 
   buildPhase = ''
-    echo ">> Downloading ${product} for ${release} with mpm …"
+    echo ">> Downloading ${builtins.concatStringsSep " " products} for ${release} with mpm …"
     mkdir -p ${destination}
     mpm-fhs -c "mpm download \
       --release ${release} \
       --destination ${destination} \
-      --products ${product} \
-      --no-deps"
+      --products ${builtins.concatStringsSep " " products}"
   '';
 
   installPhase = ''

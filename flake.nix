@@ -40,15 +40,18 @@
           release = cfg.release;
           closureProducts = cfg.closureProducts;
           selectedNames = map (p: p.name) cfg.selectedProducts;
+          closureNames = map (p: p.name) closureProducts;
 
-          mpmSources = map (product: fetchMpm {
+          mpmSource = fetchMpm {
             inherit release;
-            hash = product.hash;
-            product = product.name;
-          }) closureProducts;
+            hash = if cfg.sourceHash != null then cfg.sourceHash else if builtins.length closureProducts == 1
+              then (builtins.head closureProducts).hash
+              else throw "programs.matlab.sourceHash is required when installing multiple products";
+            products = closureNames;
+          };
           matlabRaw = installMatlab {
             inherit release closureProducts selectedNames;
-            sources = mpmSources;
+            source = mpmSource;
           };
           shrelease = "2025.3.0.2";
           shRaw = serviceHost;
@@ -115,6 +118,7 @@
               programs.matlab = {
                 release = "R2026a";
                 installedProducts = [ "matlab" ];
+                sourceHash = "sha256-m7ZU9XfCUikpeuoRMJ+e7DIZ0fJGsLsXpOCgtlKSvaQ=";
               };
             }
           ];
@@ -129,6 +133,7 @@
               programs.matlab = {
                 release = "R2026a";
                 installedProducts = [ "matlab" "simulink" ];
+                sourceHash = "sha256-ITAJ5KSd0dURhIP6ipFJGTTYYr/Pd38l6CY3SrlZS+U=";
               };
             }
           ];
@@ -143,6 +148,7 @@
               programs.matlab = {
                 release = "R2026a";
                 installedProducts = [ "matlab" "simulink" "imageProcessing" "signalProcessing" ];
+                sourceHash = "sha256-EF2qws3SOEjOlYk1ENk+5rhHKPJtX9DFmbVQszuNfkg=";
               };
             }
           ];

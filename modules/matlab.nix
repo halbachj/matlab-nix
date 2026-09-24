@@ -36,6 +36,15 @@ in
       example = [ "matlab" "simulink" "imageProcessing" ];
     };
 
+    sourceHash = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Fixed-output hash of the MPM download for this product selection and
+        its dependency closure. Required when selecting more than MATLAB.
+      '';
+    };
+
     connector = {
       enable = lib.mkOption {
         type = lib.types.bool;

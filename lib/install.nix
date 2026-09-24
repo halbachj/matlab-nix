@@ -1,24 +1,17 @@
-# Builds the raw MATLAB install tree from merged MPM sources. This layer only
-# merges sources and runs `mpm install`; it is independent of the FHS GUI
+# Builds the raw MATLAB install tree from an MPM source bundle. This layer only
+# runs `mpm install`; it is independent of the FHS GUI
 # wrappers in lib/fhs.nix and knows nothing about product selection.
 
 { pkgs }:
 
 { release,            # e.g. "R2026a"
   closureProducts,    # metadata entries covering the dependency closure
-  sources,            # fixed-output fetches, one per closureProducts entry
+  source,             # fixed-output MPM source bundle for closureProducts
   selectedNames,      # top-level selected product names (what mpm installs)
 }:
 let
   lib = pkgs.lib;
   mpm = import ../modules/mpm.nix { inherit pkgs; };
-  mergeMpmSources = import ./mergeMpmSources.nix { inherit pkgs; };
-
-  src = mergeMpmSources {
-    inherit release;
-    products = closureProducts;
-    sources = sources;
-  };
   prodArgs = lib.concatStringsSep " " selectedNames;
 in
 pkgs.stdenvNoCC.mkDerivation {
@@ -27,7 +20,7 @@ pkgs.stdenvNoCC.mkDerivation {
 
   nativeBuildInputs = [ mpm.fhs ];
 
-  src = src;
+  src = source;
   dontUnpack = true;
   phases = [ "installPhase" ];
 
