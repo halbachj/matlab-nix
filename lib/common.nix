@@ -26,7 +26,8 @@ let
     pango
     #python27 #TODO: figure out why?
     #python36
-    python310
+    # python3.10 was dropped from newer nixpkgs; fall back to 3.12
+    (pkgs.python310 or pkgs.python312)
     libselinux
     libsndfile
     libuuid
