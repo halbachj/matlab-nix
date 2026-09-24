@@ -23,7 +23,7 @@ let
       "/sys:/sys"                                # sometimes required by MATLAB runtime
     ];
 
-    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils matlabRaw pkgs.tree pkgs.libsForQt5.full ];
+    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils matlabRaw pkgs.tree pkgs.qt5.qtbase ];
 
     extraPreBwrapCmds = ''
       matlab_settings_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/matlab-nix/toolbox-local-settings"
@@ -50,7 +50,7 @@ let
 
   shFHS = pkgs.buildFHSEnv {
     name = "service-host-fhs";
-    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils serviceHost pkgs.tree pkgs.libsForQt5.full pkgs.boost ];
+    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils serviceHost pkgs.tree pkgs.qt5.qtbase pkgs.boost ];
     runScript = ''
       #!/bin/sh
       export LD_LIBRARY_PATH=/lib:/usr/lib:$LD_LIBRARY_PATH
@@ -60,7 +60,7 @@ let
 
   serviceHostWindowFHS = pkgs.buildFHSEnv {
     name = "service-host-window-fhs";
-    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils pkgs.libsForQt5.full ];
+    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils pkgs.qt5.qtbase ];
     runScript = ''
       #!/bin/sh
       export QT_QPA_PLATFORM=xcb
@@ -77,7 +77,7 @@ let
 
   connectorFHS = pkgs.buildFHSEnv {
     name = "matlab-connector-fhs";
-    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils pkgs.libsForQt5.full ];
+    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils pkgs.qt5.qtbase ];
     runScript = ''
       #!/bin/sh
       export QT_QPA_PLATFORM=xcb
