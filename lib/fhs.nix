@@ -25,6 +25,9 @@ let
 
     targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils matlabRaw pkgs.tree pkgs.qt5.qtbase ];
 
+    # Do not import the host profile: it includes this wrapper's bin directory.
+    profile = "";
+
     extraPreBwrapCmds = ''
       matlab_settings_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/matlab-nix/toolbox-local-settings"
       matlab_license_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/matlab-nix/licenses"
