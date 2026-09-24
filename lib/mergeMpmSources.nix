@@ -1,6 +1,6 @@
 { pkgs }:
 
-{ release, checksum, products, sources }:
+{ release, products, sources }:
 assert builtins.length products == builtins.length sources;
 let
   lib = pkgs.lib;
@@ -8,7 +8,7 @@ let
     (lib.sort (a: b: a.productCode < b.productCode) products);
   sourcePaths = lib.concatStringsSep " " (map toString sources);
 in
-pkgs.runCommand "mpm-${release}-source" { nativeBuildInputs = [ pkgs.coreutils pkgs.findutils ]; } ''
+pkgs.runCommand "mpm-${release}-source" { nativeBuildInputs = [ pkgs.coreutils pkgs.findutils pkgs.gnused ]; } ''
   mkdir -p "$out/archives/glnxa64" "$out/mpm"
   for source in ${sourcePaths}; do
     for directory in archives mpm; do
@@ -28,13 +28,18 @@ pkgs.runCommand "mpm-${release}-source" { nativeBuildInputs = [ pkgs.coreutils p
     done
   done
 
-  cat > "$out/ProductFilesInfo.xml" <<'EOF'
+  # MPM validates this value against the downloaded archives. Keep it coupled
+  # to the fixed-output source rather than duplicating it in release metadata.
+  checksum="$(sed -n 's:.*<checksum>\([^<]*\)</checksum>.*:\1:p' "${builtins.head sources}/ProductFilesInfo.xml")"
+  test -n "$checksum"
+
+  cat > "$out/ProductFilesInfo.xml" <<EOF
   <?xml version="1.0" encoding="utf-8"?>
   <product_files_info>
     <release>${release}</release>
     <status>Release</status>
     <update_level>5</update_level>
-    <checksum>${checksum}</checksum>
+    <checksum>$checksum</checksum>
     <available_products>
   ${productCodes}
     </available_products>

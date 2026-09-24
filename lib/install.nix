@@ -5,7 +5,6 @@
 { pkgs }:
 
 { release,            # e.g. "R2026a"
-  checksum,           # release checksum from product metadata
   closureProducts,    # metadata entries covering the dependency closure
   sources,            # fixed-output fetches, one per closureProducts entry
   selectedNames,      # top-level selected product names (what mpm installs)
@@ -16,7 +15,7 @@ let
   mergeMpmSources = import ./mergeMpmSources.nix { inherit pkgs; };
 
   src = mergeMpmSources {
-    inherit release checksum;
+    inherit release;
     products = closureProducts;
     sources = sources;
   };

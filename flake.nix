@@ -38,7 +38,6 @@
           fhsWrappers = import ./lib/fhs.nix { inherit pkgs matlabLibs; };
 
           release = cfg.release;
-          checksum = cfg.releaseMetadata.checksum;
           closureProducts = cfg.closureProducts;
           selectedNames = map (p: p.name) cfg.selectedProducts;
 
@@ -48,7 +47,7 @@
             product = product.name;
           }) closureProducts;
           matlabRaw = installMatlab {
-            inherit release checksum closureProducts selectedNames;
+            inherit release closureProducts selectedNames;
             sources = mpmSources;
           };
           shrelease = "2025.3.0.2";
