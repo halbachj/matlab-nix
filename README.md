@@ -48,6 +48,10 @@ The MATLAB package installs a `matlab` command (the FHS wrapper), so
 `nix shell .#matlab -c matlab` or adding it to `environment.systemPackages`
 puts `matlab` directly on `PATH`.
 
+On Wayland sessions, MATLAB runs through XWayland. Ensure XWayland is enabled
+in the compositor and start MATLAB from the graphical session so `DISPLAY` and
+`XAUTHORITY` are available.
+
 ## Packages
 
 | Package | Description |

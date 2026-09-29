@@ -23,7 +23,13 @@ let
       "/sys:/sys"                                # sometimes required by MATLAB runtime
     ];
 
-    targetPkgs = pkgs: matlabLibs ++ [ pkgs.coreutils matlabRaw pkgs.tree pkgs.qt5.qtbase ];
+    targetPkgs = pkgs: matlabLibs ++ [
+      pkgs.coreutils
+      matlabRaw
+      pkgs.tree
+      pkgs.qt5.qtbase
+      pkgs.xorg.xrandr
+    ];
 
     # Do not import the host profile: it includes this wrapper's bin directory.
     profile = "";
@@ -44,7 +50,7 @@ let
     ];
     runScript = ''
       #!/bin/sh
-      export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib64/qt-5.15.17/plugins/platforms
+      export QT_QPA_PLATFORM_PLUGIN_PATH=${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms
       export QT_QPA_PLATFORM=xcb
       export LDPATH_SUFFIX=${(pkgs.libice or pkgs.xorg.libICE)}/lib:${(pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor)}/lib:/usr/lib:/usr/lib64
       exec ${matlabRaw}/out/bin/matlab "$@"
