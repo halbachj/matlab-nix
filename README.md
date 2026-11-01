@@ -8,6 +8,7 @@ via the MathWorks Package Manager (`mpm`). It exposes:
 
 - a public, release-independent product catalog (`matlabProducts`),
 - per-release metadata (`productMetadata`),
+- declarative third-party plugins and scripts, with a pinned `matlab2tikz` definition,
 - a NixOS module (`programs.matlab`) for selecting a release and products with
   evaluation-time validation,
 - a package builder (`lib.mkMatlabPackages` / `lib.mkMatlab`) driven by the
@@ -121,6 +122,74 @@ matlab-nix.lib.mkMatlabPackages {
   serviceHostRaw }`. `lib.mkMatlab` is a shorthand that returns only the
   `matlab` FHS wrapper.
 
+## Third-party plugins and scripts
+
+Use `programs.matlab.plugins` to make external MATLAB code available whenever
+you launch the configured `matlab` wrapper. Each named entry has a `source`
+(a local Nix directory path or a fetched/built package) and `paths` (directories
+relative to that source, defaulting to `[ "." ]`).
+
+For example, enable the bundled, pinned
+[matlab2tikz](https://github.com/matlab2tikz/matlab2tikz) v1.1.0 definition and
+your own scripts:
+
+```nix
+{
+  imports = [ matlab-nix.nixosModules.matlab ];
+
+  programs.matlab = {
+    release = "R2026a";
+    plugins = {
+      matlab2tikz = matlab-nix.matlabPlugins.${pkgs.stdenv.hostPlatform.system}.matlab2tikz;
+      myScripts.source = ./matlab-scripts;
+    };
+  };
+
+  environment.systemPackages = [
+    (matlab-nix.lib.mkMatlab { programsMatlab = config.programs.matlab; })
+  ];
+}
+```
+
+The same `plugins` attribute works in raw `programsMatlab` settings passed to
+`lib.mkMatlab` or `lib.mkMatlabPackages`. For another repository, use a pinned
+fetcher and specify its public code directories:
+
+```nix
+programs.matlab.plugins.custom = {
+  source = pkgs.fetchFromGitHub {
+    owner = "your-org";
+    repo = "your-matlab-library";
+    rev = "<commit>";
+    hash = "sha256-<source-hash>";
+  };
+  paths = [ "src" "utilities" ];
+};
+```
+
+Plugin directories are checked at build time and prepended to `MATLABPATH`,
+preserving any existing value. Entries are ordered by plugin name, then by
+their `paths` list. Paths are not recursive: list the required public
+directories explicitly; MATLAB resolves `private`, `+package`, and `@class`
+subdirectories itself. Sources remain read-only in the Nix store. No
+`savepath` or changes to your `startup.m` are needed. Plugin changes only rebuild
+the plugin environment and launcher, not the MathWorks installation.
+
+This supports path-based `.m` scripts/functions and prebuilt libraries. It does
+not run third-party installers, compile MEX files, or install `.mltbx` archives.
+Plugins needing writable data should store it outside their source directory.
+
+With `matlab2tikz` enabled, you can use the usual commands:
+
+```matlab
+plot(1:10);
+cleanfigure;
+matlab2tikz('myfigure.tex');
+```
+
+Compiling the generated figure requires LaTeX with TikZ/PGF and pgfplots
+(upstream recommends PGF 3.0+ and pgfplots 1.13+).
+
 ## Architecture
 
 The project is split into independent layers so each concern can be tested and
@@ -136,6 +205,8 @@ maintained separately:
 | Install | `lib/install.nix` | Merge sources + `mpm install`; FHS-independent |
 | Service Host | `lib/serviceHost.nix` | MathWorks Service Host derivation |
 | GUI wrappers | `lib/fhs.nix` | FHS sandboxes that launch MATLAB / Service Host / Connector |
+| Plugin environment | `lib/plugins.nix` | Checked plugin directories exposed through `MATLABPATH` |
+| Plugin catalog | `lib/matlabPlugins.nix` | Pinned definitions exposed as `matlabPlugins.<system>` |
 | Wiring | `flake.nix` | Public outputs, package resolution, meta, checks |
 | Tests | `tests/checks.nix` | Eval-time closure assertions (`nix flake check`) |
 

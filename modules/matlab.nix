@@ -45,6 +45,39 @@ in
       '';
     };
 
+    plugins = lib.mkOption {
+      default = { };
+      description = ''
+        Third-party MATLAB functions and scripts, keyed by a descriptive name.
+        Their directories are added to MATLABPATH by the MATLAB wrapper.
+      '';
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          source = lib.mkOption {
+            type = lib.types.either lib.types.path lib.types.package;
+            description = "Plugin source directory: a local Nix path or a fetched/built package.";
+          };
+          paths = lib.mkOption {
+            type = lib.types.addCheck (lib.types.listOf lib.types.str) (paths:
+              paths != [ ] && lib.all (path:
+                path != "" && !lib.hasPrefix "/" path
+                && !lib.elem ".." (lib.splitString "/" path)
+                && !lib.hasInfix ":" path
+                && !lib.hasInfix "\n" path
+              ) paths);
+            default = [ "." ];
+            example = [ "src" ];
+            description = ''
+              Nonempty list of directories relative to source to add to the
+              MATLAB search path. Directories are not added recursively; list
+              each public directory explicitly, excluding private, +package,
+              and @class directories. Parent traversal is not allowed.
+            '';
+          };
+        };
+      });
+    };
+
     connector = {
       enable = lib.mkOption {
         type = lib.types.bool;

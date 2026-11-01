@@ -58,6 +58,7 @@
 
           wrappers = fhsWrappers {
             inherit matlabRaw;
+            inherit (cfg) plugins;
             serviceHost = shRaw;
             inherit shrelease;
             enableConnector = cfg.connector.enable;
@@ -79,7 +80,7 @@
 
       # Package builder driven by the consumer's `programs.matlab`. Accepts
       # either the evaluated `config.programs.matlab` (from the NixOS module)
-      # or raw `{ release, installedProducts, connector.enable? }` settings.
+      # or raw `{ release, installedProducts, plugins?, connector.enable? }` settings.
       # Returns { matlab, matlabRaw, serviceHost, serviceHostWindow, connector,
       # serviceHostRaw }.
       lib =
@@ -156,6 +157,7 @@
         toolboxesPackages = makePackages pkgs toolboxesCfg.config.programs.matlab;
 
         mpm = import ./modules/mpm.nix { inherit pkgs; };
+        plugins = import ./lib/matlabPlugins.nix { inherit pkgs; };
 
         mkMeta = pname: description: extra: {
           inherit pname description;
@@ -168,6 +170,8 @@
         attachMeta = pkg: pname: description: extra:
           pkg // { meta = mkMeta pname description extra; };
       in {
+        matlabPlugins = plugins;
+
         packages = {
           # Minimal default package: MATLAB only.
           default = attachMeta defaultPackages.matlab "matlab"

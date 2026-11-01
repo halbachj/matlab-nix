@@ -80,4 +80,4 @@ in
     in
     assert !attempt.success;
     mkCheck "specialargs-override" 1;
-}
+} // import ./plugins.nix { inherit pkgs lib; }

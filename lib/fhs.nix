@@ -8,8 +8,10 @@
   serviceHost,     # raw Service Host tree from lib/serviceHost.nix
   shrelease,       # Service Host release, e.g. "2025.3.0.2"
   enableConnector ? false,   # connector is experimental; build only if enabled
+  plugins ? { },   # third-party source directories, exposed through MATLABPATH
 }:
 let
+  pluginEnvironment = import ./plugins.nix { inherit pkgs; } plugins;
   matlabFHS = pkgs.buildFHSEnv {
     name = "matlab";
     extraMounts = [
@@ -53,6 +55,9 @@ let
       export QT_QPA_PLATFORM_PLUGIN_PATH=${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms
       export QT_QPA_PLATFORM=xcb
       export LDPATH_SUFFIX=${(pkgs.libice or pkgs.xorg.libICE)}/lib:${(pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor)}/lib:/usr/lib:/usr/lib64
+      ${pkgs.lib.optionalString (plugins != { }) ''
+        export MATLABPATH=${pkgs.lib.escapeShellArg pluginEnvironment.searchPath}''${MATLABPATH:+:"$MATLABPATH"}
+      ''}
       exec ${matlabRaw}/out/bin/matlab "$@"
     '';
   };
