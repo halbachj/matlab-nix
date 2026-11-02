@@ -85,12 +85,15 @@
       # serviceHostRaw }.
       lib =
         let
-          mkMatlabPackages = { system ? "x86_64-linux", programsMatlab }:
+          mkMatlabPackages = {
+            system ? "x86_64-linux",
+            pkgs ? import nixpkgs {
+              inherit system;
+              config.allowUnfree = true;
+            },
+            programsMatlab,
+          }:
             let
-              pkgs = import nixpkgs {
-                inherit system;
-                config.allowUnfree = true;
-              };
               cfg =
                 if programsMatlab ? closureProducts
                 then programsMatlab

@@ -53,6 +53,31 @@ On Wayland sessions, MATLAB runs through XWayland. Ensure XWayland is enabled
 in the compositor and start MATLAB from the graphical session so `DISPLAY` and
 `XAUTHORITY` are available.
 
+### Hardware-accelerated graphics
+
+On NixOS, pass your system's `pkgs` to `lib.mkMatlab` / `lib.mkMatlabPackages`
+as shown below. This builds the FHS environment with runtime libraries from
+the same package set as your host GPU drivers. Enable `hardware.graphics.enable`
+in your NixOS configuration as well.
+
+An older flake runtime can fail to load newer host Mesa drivers, causing the
+warning **"Graphics acceleration hardware is unavailable"** and a fallback to
+SwiftShader software rendering. For example, Mesa built with newer glibc can
+require `GLIBC_ABI_GNU2_TLS`, which an older FHS glibc does not provide.
+
+Check the active renderer in MATLAB (R2025a and newer) with:
+
+```matlab
+r = rendererinfo;
+disp(r);
+disp(r.Details);
+```
+
+`RendererDevice` should identify your GPU, and
+`r.Details.HardwareSupportLevel` should report `Full` when full acceleration is
+available. `SwiftShader` indicates software rendering. For older MATLAB
+releases, use `opengl info`.
+
 ## Packages
 
 | Package | Description |
@@ -82,7 +107,7 @@ selection:
   # The module validates `programs.matlab` but installs nothing by itself.
   # `mkMatlab` builds the `matlab` FHS wrapper from the evaluated config.
   environment.systemPackages = [
-    (matlab-nix.lib.mkMatlab { programsMatlab = config.programs.matlab; })
+    (matlab-nix.lib.mkMatlab { inherit pkgs; programsMatlab = config.programs.matlab; })
   ];
 }
 ```
@@ -109,11 +134,15 @@ instead of the flake's built-in example configurations:
 
 ```nix
 matlab-nix.lib.mkMatlabPackages {
-  system = "x86_64-linux";          # default
+  inherit pkgs;                    # use the host package set (recommended on NixOS)
   programsMatlab = config.programs.matlab;   # or raw settings
 }
 ```
 
+- `pkgs` optionally supplies the package set used for the runtime and builds;
+  it must allow unfree packages. If omitted, the builder imports this flake's
+  pinned nixpkgs with `allowUnfree = true`, using `system` (default
+  `"x86_64-linux"`). When `pkgs` is supplied, it determines the platform.
 - `programsMatlab` accepts either the evaluated `config.programs.matlab` (from
   `nixosModules.matlab`) or raw settings such as
   `{ release = "R2026a"; installedProducts = [ "matlab" ]; }` (the builder
@@ -146,7 +175,7 @@ your own scripts:
   };
 
   environment.systemPackages = [
-    (matlab-nix.lib.mkMatlab { programsMatlab = config.programs.matlab; })
+    (matlab-nix.lib.mkMatlab { inherit pkgs; programsMatlab = config.programs.matlab; })
   ];
 }
 ```
