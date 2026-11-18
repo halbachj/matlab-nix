@@ -30,4 +30,5 @@
   uav = "UAV_Toolbox";
   aerospace = "Aerospace_Toolbox";
   aerospaceBlockset = "Aerospace_Blockset";
+  optimization = "Optimization_Toolbox";
 }

@@ -183,6 +183,13 @@
         hash = "sha256-uK6dsCBXWrfts9IVcV7eMdiJCgG9LQjKhf7+pIEIruM=";
         dependencies = [ "MATLAB" "Simulink" "Aerospace_Toolbox" ];
       };
+
+      Optimization_Toolbox = {
+        name = "Optimization_Toolbox";
+        productCode = "OP";
+        hash = "sha256-UP31GGlcgmLcNYh00FoHkfencRffhTBhK5QF3Zx7aYg=";
+        dependencies = [ "MATLAB" ];
+      };
     };
   };
 }
