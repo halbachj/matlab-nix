@@ -169,6 +169,20 @@
         hash = "sha256-ct3QanNVkf7oyvEVR/IEh11WBpg4DLumxmP/gG6bhXw=";
         dependencies = [ "MATLAB" ];
       };
+
+      Aerospace_Toolbox = {
+        name = "Aerospace_Toolbox";
+        productCode = "AE";
+        hash = "sha256-1oereQeYY/VxSmltdFXIMepaFykUaF6dUo0ozIUlYE4=";
+        dependencies = [ "MATLAB" ];
+      };
+
+      Aerospace_Blockset = {
+        name = "Aerospace_Blockset";
+        productCode = "AB";
+        hash = "sha256-uK6dsCBXWrfts9IVcV7eMdiJCgG9LQjKhf7+pIEIruM=";
+        dependencies = [ "MATLAB" "Simulink" "Aerospace_Toolbox" ];
+      };
     };
   };
 }

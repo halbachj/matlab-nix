@@ -28,4 +28,6 @@
   matlabCoder = "MATLAB_Coder";
   simulinkCoder = "Simulink_Coder";
   uav = "UAV_Toolbox";
+  aerospace = "Aerospace_Toolbox";
+  aerospaceBlockset = "Aerospace_Blockset";
 }
