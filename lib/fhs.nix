@@ -12,6 +12,7 @@
 }:
 let
   pluginEnvironment = import ./plugins.nix { inherit pkgs; } plugins;
+  execEnvironment = import ./exec.nix { inherit pkgs; };
   matlabFHS = pkgs.buildFHSEnv {
     name = "matlab";
     extraMounts = [
@@ -27,6 +28,7 @@ let
 
     targetPkgs = pkgs: matlabLibs ++ [
       pkgs.coreutils
+      execEnvironment.helper
       matlabRaw
       pkgs.tree
       pkgs.qt5.qtbase
@@ -52,6 +54,8 @@ let
     ];
     runScript = ''
       #!/bin/sh
+      ${execEnvironment.captureEnv}
+
       export QT_QPA_PLATFORM_PLUGIN_PATH=${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms
       export QT_QPA_PLATFORM=xcb
       export LDPATH_SUFFIX=${(pkgs.libice or pkgs.xorg.libICE)}/lib:${(pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor)}/lib:/usr/lib:/usr/lib64

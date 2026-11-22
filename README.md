@@ -53,12 +53,36 @@ On Wayland sessions, MATLAB runs through XWayland. Ensure XWayland is enabled
 in the compositor and start MATLAB from the graphical session so `DISPLAY` and
 `XAUTHORITY` are available.
 
+### Host package set (required on NixOS)
+
+`matlab-nix` must be built with the host NixOS package set. When installing
+through the module, pass `inherit pkgs`:
+
+```nix
+matlab = matlab-nix.lib.mkMatlab {
+  inherit pkgs;
+  programsMatlab = config.programs.matlab;
+};
+```
+
+Do not pass only `system`. In that case `mkMatlabPackages` falls back to the
+flake's pinned `nixpkgs`, while the FHS still reads host-provided files such as
+`/etc/alsa/conf.d` and host graphics drivers. Mixing host ALSA plugins or Mesa
+drivers with FHS libraries from a different package set can cause failures,
+including PipeWire ALSA plugins failing to load and graphics-acceleration
+falling back to software rendering. Passing `inherit pkgs` keeps the FHS
+libraries and the host stack on the same package set. If the flake input is
+used, also set `matlab-nix.inputs.nixpkgs.follows = "nixpkgs"`.
+
+See [docs/audio.md](docs/audio.md) for the audio-specific diagnosis and
+troubleshooting steps.
+
 ### Hardware-accelerated graphics
 
 On NixOS, pass your system's `pkgs` to `lib.mkMatlab` / `lib.mkMatlabPackages`
-as shown below. This builds the FHS environment with runtime libraries from
-the same package set as your host GPU drivers. Enable `hardware.graphics.enable`
-in your NixOS configuration as well.
+as shown above. This is required, not merely recommended: it builds the FHS
+environment with runtime libraries from the same package set as your host GPU
+drivers. Enable `hardware.graphics.enable` in your NixOS configuration as well.
 
 An older flake runtime can fail to load newer host Mesa drivers, causing the
 warning **"Graphics acceleration hardware is unavailable"** and a fallback to
@@ -78,11 +102,36 @@ disp(r.Details);
 available. `SwiftShader` indicates software rendering. For older MATLAB
 releases, use `opengl info`.
 
+### Audio and external commands
+
+MathWorks' launcher prepends MATLAB's bundled library directories to
+`LD_LIBRARY_PATH`. Programs launched with `system()` therefore inherit
+MATLAB's older bundled `libstdc++`, which can break host utilities such as
+`pw-play`:
+
+```text
+libstdc++.so.6: version `GLIBCXX_3.4.32' not found
+```
+
+Use the packaged `matlab-nix-exec` helper to run external commands with the
+library environment that existed before MATLAB started:
+
+```matlab
+[status, output] = system('matlab-nix-exec pw-play /path/to/file.wav');
+disp(status);
+disp(output);
+```
+
+`matlab-nix-exec` is on `PATH` inside the MATLAB FHS. It affects only the
+child process; MATLAB's own runtime is unchanged. See
+[docs/audio.md](docs/audio.md) for device detection, PipeWire/ALSA
+troubleshooting, and the remaining `sound()` limitation.
+
 ## Packages
 
 | Package | Description |
 | --- | --- |
-| `default` / `matlab` | MATLAB under an FHS sandbox (minimal default) |
+| `default` / `matlab` | MATLAB under an FHS sandbox (flake-pinned nixpkgs; use `mkMatlab { inherit pkgs; ... }` on NixOS) |
 | `matlabRaw` | Raw MATLAB install tree from MPM sources (no FHS wrapper) |
 | `serviceHost` | MathWorks Service Host under an FHS sandbox |
 | `serviceHostWindow` | Service Host window under an FHS sandbox |
@@ -116,6 +165,10 @@ The module imports its metadata (`matlabProducts`, `productMetadata`) from the
 flake source tree, so it needs no `specialArgs` or `_module.args` in a NixOS
 system evaluation.
 
+The `inherit pkgs` in the `mkMatlab` call is required on NixOS. Without it the
+builder uses the flake's pinned `nixpkgs`, which can mismatch host ALSA plugins
+and graphics drivers; see [Host package set](#host-package-set-required-on-nixos).
+
 Product keys are the names of the `matlabProducts` catalog (e.g. `matlab`,
 `simulink`, `imageProcessing`, `signalProcessing`). At evaluation time the
 module validates that:
@@ -134,15 +187,17 @@ instead of the flake's built-in example configurations:
 
 ```nix
 matlab-nix.lib.mkMatlabPackages {
-  inherit pkgs;                    # use the host package set (recommended on NixOS)
+  inherit pkgs;                    # host package set; required on NixOS
   programsMatlab = config.programs.matlab;   # or raw settings
 }
 ```
 
-- `pkgs` optionally supplies the package set used for the runtime and builds;
-  it must allow unfree packages. If omitted, the builder imports this flake's
-  pinned nixpkgs with `allowUnfree = true`, using `system` (default
-  `"x86_64-linux"`). When `pkgs` is supplied, it determines the platform.
+- `pkgs` supplies the package set used for the runtime and builds; on NixOS it
+  must be the host `pkgs` so FHS libraries match host audio plugins and
+  graphics drivers. It must allow unfree packages. If omitted, the builder
+  imports this flake's pinned nixpkgs with `allowUnfree = true`, using `system`
+  (default `"x86_64-linux"`). When `pkgs` is supplied, it determines the
+  platform.
 - `programsMatlab` accepts either the evaluated `config.programs.matlab` (from
   `nixosModules.matlab`) or raw settings such as
   `{ release = "R2026a"; installedProducts = [ "matlab" ]; }` (the builder
@@ -234,10 +289,12 @@ maintained separately:
 | Install | `lib/install.nix` | Merge sources + `mpm install`; FHS-independent |
 | Service Host | `lib/serviceHost.nix` | MathWorks Service Host derivation |
 | GUI wrappers | `lib/fhs.nix` | FHS sandboxes that launch MATLAB / Service Host / Connector |
+| Linker environment | `lib/exec.nix` | Captures the caller's `LD_LIBRARY_PATH` / `LD_PRELOAD` and provides `matlab-nix-exec` |
 | Plugin environment | `lib/plugins.nix` | Checked plugin directories exposed through `MATLABPATH` |
 | Plugin catalog | `lib/matlabPlugins.nix` | Pinned definitions exposed as `matlabPlugins.<system>` |
 | Wiring | `flake.nix` | Public outputs, package resolution, meta, checks |
-| Tests | `tests/checks.nix` | Eval-time closure assertions (`nix flake check`) |
+| Tests | `tests/checks.nix` | Eval-time closure assertions and wrapper/helper tests (`nix flake check`) |
+| Audio notes | `docs/audio.md` | Host package requirement, PipeWire/ALSA troubleshooting, playback examples |
 
 ## Maintenance
 
