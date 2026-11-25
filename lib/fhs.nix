@@ -9,6 +9,7 @@
   shrelease,       # Service Host release, e.g. "2025.3.0.2"
   enableConnector ? false,   # connector is experimental; build only if enabled
   plugins ? { },   # third-party source directories, exposed through MATLABPATH
+  extraPkgs ? [ ], # additional packages to make available inside the MATLAB FHS
 }:
 let
   pluginEnvironment = import ./plugins.nix { inherit pkgs; } plugins;
@@ -33,7 +34,7 @@ let
       pkgs.tree
       pkgs.qt5.qtbase
       pkgs.xorg.xrandr
-    ];
+    ] ++ extraPkgs;
 
     # Do not import the host profile: it includes this wrapper's bin directory.
     profile = "";
@@ -59,6 +60,11 @@ let
       export QT_QPA_PLATFORM_PLUGIN_PATH=${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms
       export QT_QPA_PLATFORM=xcb
       export LDPATH_SUFFIX=${(pkgs.libice or pkgs.xorg.libICE)}/lib:${(pkgs.libxcb-cursor or pkgs.xorg.xcbutilcursor)}/lib:/usr/lib:/usr/lib64
+      ${pkgs.lib.optionalString (extraPkgs != [ ]) ''
+        # Make GStreamer plugins from extraPkgs discoverable. MATLAB's audioread
+        # dlopens GStreamer 1.0 and scans these directories, e.g. for wavparse.
+        export GST_PLUGIN_SYSTEM_PATH_1_0=${pkgs.lib.escapeShellArg (pkgs.lib.makeSearchPath "lib/gstreamer-1.0" extraPkgs)}''${GST_PLUGIN_SYSTEM_PATH_1_0:+:$GST_PLUGIN_SYSTEM_PATH_1_0}
+      ''}
       ${pkgs.lib.optionalString (plugins != { }) ''
         export MATLABPATH=${pkgs.lib.escapeShellArg pluginEnvironment.searchPath}''${MATLABPATH:+:"$MATLABPATH"}
       ''}

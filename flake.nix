@@ -58,7 +58,7 @@
 
           wrappers = fhsWrappers {
             inherit matlabRaw;
-            inherit (cfg) plugins;
+            inherit (cfg) plugins extraPkgs;
             serviceHost = shRaw;
             inherit shrelease;
             enableConnector = cfg.connector.enable;
@@ -80,7 +80,7 @@
 
       # Package builder driven by the consumer's `programs.matlab`. Accepts
       # either the evaluated `config.programs.matlab` (from the NixOS module)
-      # or raw `{ release, installedProducts, plugins?, connector.enable? }` settings.
+      # or raw `{ release, installedProducts, plugins?, extraPkgs?, connector.enable? }` settings.
       # Returns { matlab, matlabRaw, serviceHost, serviceHostWindow, connector,
       # serviceHostRaw }.
       lib =

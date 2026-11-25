@@ -78,6 +78,27 @@ in
       });
     };
 
+    extraPkgs = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [ ];
+      example = lib.literalExpression ''
+        with pkgs; [
+          gst_all_1.gstreamer
+          gst_all_1.gst-plugins-base
+          gst_all_1.gst-plugins-good
+        ]
+      '';
+      description = ''
+        Additional packages to make available inside the MATLAB FHS, for
+        runtime requirements that matlab-nix does not depend on itself. Their
+        binaries are added to `PATH`, their libraries to the FHS linker search
+        path, and any `lib/gstreamer-1.0` plugin directories to
+        `GST_PLUGIN_SYSTEM_PATH_1_0`. This is how GStreamer support for
+        `audioread` and `audiowrite` is provided without adding GStreamer as a
+        dependency of this project.
+      '';
+    };
+
     connector = {
       enable = lib.mkOption {
         type = lib.types.bool;

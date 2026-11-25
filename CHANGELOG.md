@@ -22,6 +22,13 @@ All notable changes to this project are documented here. The format follows
   and helper availability in the FHS.
 - `docs/audio.md` with PipeWire/ALSA device detection, playback examples, and
   troubleshooting steps.
+- `programs.matlab.extraPkgs` for runtime-only packages in the MATLAB FHS,
+  including automatic `GST_PLUGIN_SYSTEM_PATH_1_0` wiring for GStreamer, so
+  `audioread` and `audiowrite` work without GStreamer becoming a matlab-nix
+  dependency.
+- Tests for the `extraPkgs` default, FHS target packages, and GStreamer plugin
+  path.
+- GStreamer/`audioread` setup in the README and `docs/audio.md`.
 
 ### Changed
 

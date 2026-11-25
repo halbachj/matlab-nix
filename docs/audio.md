@@ -161,6 +161,42 @@ default. Use `audioplayer(y, Fs, nBits, id)` or
 `audioDeviceWriter(..., 'Device', 'default')` when routing matters. This is a
 MATLAB API limitation, not a matlab-nix limitation.
 
+## GStreamer for `audioread` and `audiowrite`
+
+MATLAB's audio file I/O uses GStreamer 1.0. When it is unavailable,
+`audioread` fails with:
+
+```text
+Error using audioread (line 153)
+Audio file I/O requires Gstreamer 1.0 and higher.
+Install this on your system and restart MATLAB.
+```
+
+GStreamer is not bundled by matlab-nix. Add it to the MATLAB FHS with
+`programs.matlab.extraPkgs`:
+
+```nix
+programs.matlab.extraPkgs = with pkgs; [
+  gst_all_1.gstreamer
+  gst_all_1.gst-plugins-base
+  gst_all_1.gst-plugins-good
+];
+```
+
+The wrapper adds these packages to the FHS and sets
+`GST_PLUGIN_SYSTEM_PATH_1_0` to their `lib/gstreamer-1.0` directories, so
+GStreamer can find decoders such as `wavparse`. `gst-plugins-good` covers WAV;
+add `gst-plugins-bad`, `gst-plugins-ugly`, or `gst-libav` for the formats they
+provide (MP3, AAC, and others).
+
+Rebuild the system or package and restart MATLAB after changing `extraPkgs`.
+GStreamer caches its plugin registry, so the first start after a change can be
+slower. Verify with:
+
+```matlab
+[y, fs] = audioread("myfile.wav");
+```
+
 ## Troubleshooting
 
 Check which `alsa-lib` the installed wrapper uses:

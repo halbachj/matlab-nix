@@ -274,6 +274,45 @@ matlab2tikz('myfigure.tex');
 Compiling the generated figure requires LaTeX with TikZ/PGF and pgfplots
 (upstream recommends PGF 3.0+ and pgfplots 1.13+).
 
+## Extra packages in the FHS (GStreamer and `audioread`)
+
+MATLAB's `audioread` and `audiowrite` require GStreamer 1.0, but GStreamer is
+not a dependency of matlab-nix. Add the packages you need with
+`programs.matlab.extraPkgs`. They are made available inside the MATLAB FHS,
+and any `lib/gstreamer-1.0` plugin directories they provide are added to
+`GST_PLUGIN_SYSTEM_PATH_1_0`:
+
+```nix
+programs.matlab.extraPkgs = with pkgs; [
+  gst_all_1.gstreamer        # core library and tools
+  gst_all_1.gst-plugins-base # audioconvert, audiorate, ...
+  gst_all_1.gst-plugins-good # wavparse, used for WAV files
+  # gst_all_1.gst-libav      # optional: additional compressed formats
+  # gst_all_1.gst-plugins-bad
+  # gst_all_1.gst-plugins-ugly
+];
+
+environment.systemPackages = [
+  (matlab-nix.lib.mkMatlab { inherit pkgs; programsMatlab = config.programs.matlab; })
+];
+```
+
+`extraPkgs` also works in raw settings passed to `lib.mkMatlab` or
+`lib.mkMatlabPackages`. Packages are only present when you list them; they are
+not build inputs of matlab-nix. Changing `extraPkgs` rebuilds only the wrapper,
+not the MATLAB installation. GStreamer caches its plugin registry in the user's
+cache directory, so the first launch after a change may take a moment.
+
+Verify inside MATLAB:
+
+```matlab
+[y, fs] = audioread("myfile.wav");
+```
+
+The same field is useful for other runtime-only requirements, for example
+`ffmpeg`, `pandoc`, or a Python environment. Binaries land on `PATH` and
+libraries in the FHS linker search path.
+
 ## Architecture
 
 The project is split into independent layers so each concern can be tested and
@@ -288,7 +327,7 @@ maintained separately:
 | Download | `lib/fetchMpm.nix` | Fixed-output fetch of each product archive |
 | Install | `lib/install.nix` | Merge sources + `mpm install`; FHS-independent |
 | Service Host | `lib/serviceHost.nix` | MathWorks Service Host derivation |
-| GUI wrappers | `lib/fhs.nix` | FHS sandboxes that launch MATLAB / Service Host / Connector |
+| GUI wrappers | `lib/fhs.nix` | FHS sandboxes that launch MATLAB / Service Host / Connector, plus `extraPkgs` runtime packages |
 | Linker environment | `lib/exec.nix` | Captures the caller's `LD_LIBRARY_PATH` / `LD_PRELOAD` and provides `matlab-nix-exec` |
 | Plugin environment | `lib/plugins.nix` | Checked plugin directories exposed through `MATLABPATH` |
 | Plugin catalog | `lib/matlabPlugins.nix` | Pinned definitions exposed as `matlabPlugins.<system>` |
